@@ -11,7 +11,73 @@
 * **Scope Strategy:** **Current State Only**.
     * *Decision:* No historical tracking (SCD Type 2).
     * *Load Pattern:* Truncate and Load (Full Refresh) or SCD Type 1 (Overwrite).
+## 1. General Rules
+Casing: Use snake_case (all lowercase with underscores). It is the most compatible across different tools (Python, SQL, BI).
 
+Separators: Always use underscores _.
+Pluralization: Use Plural for table names (they hold multiple records) and Singular for column names.
+Good: crm_customers, dim_products
+Bad: crm_customer, dim_product_list
+
+2. Table Naming by Layer
+Bronze Layer (Staging / Raw)
+Format: {layer}_{source}_{entity}
+
+Prefix: bronze_ or stg_
+Source: crm, erp, web
+Entity: customers, orders
+
+Examples:
+bronze_crm_customers
+bronze_erp_invoices
+Silver Layer (Cleaned / 3NF)
+
+Format: {layer}_{entity}
+
+Prefix: silver_ or norm_
+
+Examples:
+silver_customers
+silver_order_details
+
+Gold Layer (Dimensional / Presentation)
+Format: {type}_{entity}
+Dimensions: dim_{entity}
+Facts: fact_{process}
+Aggregates: agg_{process}_{period}
+
+Examples:
+dim_customers
+fact_sales
+agg_sales_monthly
+
+3. Column Naming
+Keys
+Surrogate Key (PK): {table_name}_key (or sk suffix).
+Example: customer_key, product_key
+Business Key (Natural Key): {table_name}_bk or {table_name}_id.
+Example: customer_id (The ID from the CRM), order_number.
+Foreign Key: {referenced_table}_key.
+Example: customer_key (inside the fact_sales table).
+
+Technical / Audit Columns
+Prefix these with dwh_ or meta_ so they group together alphabetically at the end of the column list.
+
+dwh_load_date: Timestamp when the row was inserted.
+dwh_update_date: Timestamp when the row was last changed.
+dwh_batch_id: ID of the ETL execution (useful for debugging).
+dwh_source_system: Where the data came from (e.g., 'SAP', 'Salesforce').
+
+4. Stored Procedures (ETL)
+Format: usp_{action}_{target_layer}_{entity}
+Prefix: usp_ (User Stored Procedure - SQL Server standard).
+Action: load, transform, export.
+Layer: bronze, silver, gold.
+
+Examples:
+usp_load_bronze_crm_customers (Loading raw CSV to Bronze)
+usp_transform_silver_customers (Cleaning Bronze to Silver)
+usp_load_gold_dim_customers (Loading the Dimension)
 ---
 
 ## 3. Implementation Requirements
